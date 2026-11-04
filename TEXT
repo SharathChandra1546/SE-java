@@ -1,967 +1,1303 @@
-========================================================
-========================================================
-
-Launch an EC2 Instance and Connect
-
-========================================================
-========================================================
-========================================================
-PART A — Launch Linux EC2 Instance
-========================================================
-
-Step 1:
-Login to AWS Console / AWS Academy Learner Lab.
-
-Step 2:
-Choose Region:
-• Asia Pacific (Mumbai)
-OR
-• N. Virginia
-
-Step 3:
-Go to:
-Services → EC2 → Launch Instance
-
-Step 4:
-Configure Instance:
-1. Name: My_VS1
-2. AMI: Ubuntu / Amazon Linux
-3. Architecture: Default 64-bit (x86)
-4. Instance Type: t3.micro
-5. Create New Key Pair
-• Type: RSA
-• Format: .pem
-6. Keep default network/storage settings
-7. Click Launch Instance
-
-========================================================
-PART B — Connect Using SSH
-========================================================
-
-Step 1:
-Open Terminal / PowerShell / Git Bash
-
-Step 2:
-Go to key location:
-
-cd Downloads
-
-Step 3:
-Give permission to key:
-
-chmod 400 mykey.pem
-
-Step 4:
-Connect to Ubuntu EC2:
-
-ssh -i mykey.pem ubuntu@<Public-IP>
-
-For Amazon Linux:
-
-ssh -i mykey.pem ec2-user@<Public-IP>
-
-Step 5:
-Connected Successfully
-
-========================================================
-PART C — Connect Using PuTTY
-========================================================
-
-Step 1:
-Install PuTTY and PuTTYgen
-
-Step 2:
-Convert .pem to .ppk
-1. Open PuTTYgen
-2. Click Load
-3. Select .pem file
-4. Click Save Private Key
-5. Save as keyname.ppk
-
-Step 3:
-Open PuTTY
-
-Host Name:
-
-ubuntu@<Public-IP>
-
-OR
-
-ec2-user@<Public-IP>
-
-Step 4:
-Attach .ppk Key
-Go to:
-
-Connection → SSH → Auth → Credentials
-
-Browse and select .ppk file
-
-Step 5:
-Click Open
-
-Connected Successfully
-
-========================================================
-PART D — Connect Using AWS CloudShell
-========================================================
-
-Step 1:
-Open CloudShell in AWS Console
-
-Step 2:
-Upload .pem file
-
-Step 3:
-Run:
-
-chmod 400 mykey.pem
-
-Step 4:
-Connect:
-
-ssh -i mykey.pem ubuntu@<Public-IP>
-
-OR
-
-ssh -i mykey.pem ec2-user@<Public-IP>
-
-Connected Successfully
-
-========================================================
-PART E — Launch Windows EC2 and Connect Using RDP
-========================================================
-
-Step 1:
-Launch Windows EC2 Instance
-• Select Windows Server AMI
-• Instance Type: t2.micro
-• Allow RDP Port 3389
-• Download .pem key
-
-Step 2:
-Get Administrator Password
-EC2 → Connect → RDP Client → Get Password
-
-Upload .pem file and decrypt password
-
-Step 3:
-Open Remote Desktop
-
-mstsc
-
-Step 4:
-Enter Public IP / DNS
-
-Login:
-Username: Administrator
-Password: Decrypted Password
-
-Connected Successfully
-
-========================================================
-
-========================================================
-========================================================
-
-CCLAB - 2
-
-EBS Volume Management and EC2 Scaling in AWS
-
-========================================================
-========================================================
-
-========================================================
-Create Volume → Attach → lsblk → fdisk → mkfs → mkdir → mount → fstab → reboot
-========================================
-AWS EBS VOLUME ATTACHMENT AND PERSISTENCE
-
-STEP 4 : VERIFY ATTACHED DISK
-Command:
-lsblk
-
-Expected Output:
-
-Root Volume : nvme0n1
-New EBS Disk : nvme1n1
-
-STEP 5 : CREATE PARTITION
-Command:
-sudo fdisk /dev/nvme1n1
-
-Inside fdisk enter:
-
-n
-p
-1
-
-w
-
-Explanation:
-n -> Create new partition
-p -> Primary partition
-1 -> Partition number
-w -> Save changes
-
-
-STEP 6 : VERIFY PARTITION
-Command:
-lsblk
-
-Expected Output:
-nvme1n1
-└─nvme1n1p1
-
-
-STEP 7 : FORMAT PARTITION WITH XFS
-Command:
-sudo mkfs.xfs /dev/nvme1n1p1
-
-Verify Filesystem:
-lsblk -fs
-
-Expected:
-nvme1n1p1 xfs
-
-
-STEP 8 : CREATE MOUNT DIRECTORY
-Command:
-sudo mkdir /mnt/cseb
-
-
-STEP 9 : MOUNT THE VOLUME
-Command:
-sudo mount /dev/nvme1n1p1 /mnt/cseb
-
-Verify Mount:
-df -h
-
-Expected:
-Filesystem Size Used Avail Mounted on
-/dev/nvme1n1p1 100G ... ... /mnt/cseb
-
-
-STEP 10 : MAKE MOUNT PERSISTENT
-Get UUID:
-sudo blkid /dev/nvme1n1p1
-
-Example Output:
-/dev/nvme1n1p1: UUID="e14d4020-d4f3-4f88-bd4c-89aa97aca41a" TYPE="xfs"
-
-Edit fstab:
-sudo nano /etc/fstab
-
-Add this line at the end:
-
-UUID=e14d4020-d4f3-4f88-bd4c-89aa97aca41a /mnt/cseb xfs defaults,nofail 0 0
-
-Save and Exit:
-CTRL + O
-ENTER
-CTRL + X
-
-Test fstab:
-sudo mount -a
-
-If no error appears -> configuration is correct.
-
-Verify:
-df -h
-
-
-STEP 11 : CREATE FILE IN EBS VOLUME
-Go to mounted directory:
-cd /mnt/cseb
-
-Create file:
-sudo touch testfile.txt
-
-Add content:
-echo "EBS Volume Persistence Test" | sudo tee testfile.txt
-
-Verify:
-cat testfile.txt
-
-Expected Output:
-EBS Volume Persistence Test
-
-
-STEP 12 : UNMOUNT BEFORE DETACH
-Command:
-sudo umount /mnt/cseb
-
-Verify:
-df -h
-
-
-DETACH VOLUME FROM AWS CONSOLE
-Open EC2 Dashboard
-Click Volumes
-Select EBS Volume
-Actions -> Detach Volume
-Wait until state becomes:
-available
-
-ATTACH VOLUME TO ANOTHER EC2 INSTANCE
-Select same EBS Volume
-Actions -> Attach Volume
-Select another EC2 instance
-Device name:
-/dev/sdf
-Wait until state becomes:
-in-use
-
-ON SECOND EC2 INSTANCE
-Check attached disk:
-lsblk
-
-Expected:
-nvme1n1
-└─nvme1n1p1
-
-
-CREATE NEW MOUNT DIRECTORY
-Command:
-sudo mkdir /mnt/archana
-
-
-MOUNT EXISTING EBS VOLUME
-Command:
-sudo mount /dev/nvme1n1p1 /mnt/archana
-
-
-VERIFY DATA PERSISTENCE
-Go to directory:
-cd /mnt/archana
-
-List files:
-ls
-
-Expected:
-testfile.txt
-
-Read file:
-cat testfile.txt
-
-Expected Output:
-EBS Volume Persistence Test
-========================================================
-
-========================================================
-
-========================================================
-========================================================
-
-CCLAB - 3
-
-EFS
-
-========================================================
-========================================================
-
-========================================================
-========================================
-STEP 1 : LAUNCH EC2 INSTANCES
-Create 2 EC2 Instances:
-
-EFS-1
-
-AMI: Amazon Linux
-Instance Type: t2.micro
-Key Pair: kgf
-Subnet: us-east-1a
-EFS-2
-
-Same configuration
-Subnet: us-east-1c
-Security Group Rules:
-SSH -> Port 22 -> Anywhere
-NFS -> Port 2049 -> Anywhere
-
-========================================
-STEP 2 : CREATE EFS FILE SYSTEM
-Open AWS Console
-Go to EFS
-Click Create File System
-Select:
-
-Default VPC
-In Network Settings:
-
-Remove default SG
-Add created NFS Security Group
-Create File System
-========================================
-STEP 3 : CONNECT TO EC2 INSTANCES
-SSH Command:
-ssh -i kgf.pem ec2-user@
-
-Switch to root:
-sudo su
-
-Create directory:
-mkdir efs
-
-Install EFS Utilities:
-yum install -y amazon-efs-utils
-
-Verify:
-ls
-
-========================================
-STEP 4 : ATTACH EFS TO EC2 INSTANCES
-Mount Command:
-sudo mount -t efs -o tls fs-04ec940b87616695f:/ efs
-
-Verify:
-ls
-
-========================================
-STEP 5 : TEST EFS
-Go to EFS Directory:
-cd efs
-
-Create File:
-touch fs
-
-Verify:
-ls
-
-Expected Output:
-fs
-
-========================================
-STEP 6 : VERIFY FILE SHARING
-On Second EC2 Instance:
-
-Go to mounted EFS:
-cd efs
-
-List Files:
-ls
-
-Expected:
-fs
-
-This confirms:
-
-EFS is successfully mounted
-File sharing works between both EC2 instances
-========================================
-========================================================
-
-========================================================
-========================================================
-
-CCLAB - 4
-
-S3
-
-========================================================
-========================================================
-
-========================================================
-
-========================================
-PART 1 : AMAZON S3 BUCKET CREATION
-STEP 1 : CREATE BUCKET
-Open AWS Console
-Go to S3 Service
-Click Create Bucket
-Enter:
-
-Bucket Name : salaar-public-bucket
-Region : N. Virginia
-Settings:
-
-Enable ACLs
-Uncheck Block All Public Access
-Enable Bucket Versioning
-Click:
-Create Bucket
-
-Bucket created successfully.
-
-
-STEP 2 : ENABLE PUBLIC ACCESS
-Open Bucket
-Go to Permissions Tab
-Open Access Control List (ACL)
-Edit
-Under Public Access:
-
-Everyone (public access) → Read
-Save Changes
-
-
-STEP 3 : UPLOAD FILE
-Open Bucket
-Click Upload
-Select File
-Permissions:
-
-ACL Read Access Enabled
-Click Upload
-File uploaded successfully.
-
-
-STEP 4 : VERIFY VERSIONING
-Upload same file again
-Go to Versions
-Different versions of the same file are displayed.
-
-========================================
-PART 2 : S3 REPLICATION
-STEP 1 : CREATE DESTINATION BUCKET
-Change AWS Region
-Create another bucket
-Settings:
-
-ACL Enabled
-Uncheck Block Public Access
-Enable Versioning
-Bucket created successfully.
-
-
-STEP 2 : CREATE REPLICATION RULE
-Open Source Bucket
-Go to Management Tab
-Open Replication Rules
-Click Create Rule
-Enter:
-
-Rule Name
-Select:
-
-Apply to all objects
-Destination:
-
-Choose destination bucket
-IAM Role:
-
-Select LabRole
-Click:
-Save
-
-
-STEP 3 : TEST REPLICATION
-Upload PDF file into Source Bucket
-Open Destination Bucket
-Result:
-Uploaded file automatically appears in destination bucket.
-
-========================================
-PART 3 : STATIC WEBSITE HOSTING
-STEP 1 : CREATE STATIC WEBSITE BUCKET
-Open S3
-Click Create Bucket
-Enter:
-
-Bucket Name :
-my-static-site-bucket-123
-Settings:
-
-ACL Enabled
-Uncheck Block All Public Access
-Create Bucket
-
-
-STEP 2 : UPLOAD WEBSITE FILES
-Upload:
-
-index.html
-error.html
-Steps:
-
-Open Bucket
-Click Upload
-Add Files
-Upload
-
-STEP 3 : ENABLE STATIC WEBSITE HOSTING
-Open Properties Tab
-Scroll to Static Website Hosting
-Click Edit
-Enable
-Enter:
-
-Index Document : index.html
-Error Document : error.html
-Save Changes
-
-
-STEP 4 : ENABLE PUBLIC ACCESS
-BUCKET LEVEL ACL:
-Open Permissions
-Access Control List (ACL)
-Edit
-Enable:
-
-Everyone (public access) → Read
-Save
-
-OBJECT LEVEL ACL:
-Repeat for:
-
-index.html
-error.html
-Steps:
-
-Open Object
-Permissions
-ACL
-Edit
-Enable Public Read
-Save
-
-STEP 5 : ACCESS WEBSITE
-Open Properties
-Scroll to Static Website Hosting
-Copy Website Endpoint
-Example:
-http://my-static-site-bucket-123.s3-website-region.amazonaws.com
-
-Paste URL in browser.
-
-Result:
-index.html page opens successfully.
-
-
-STEP 6 : TEST ERROR PAGE
-Open invalid URL:
-
-http://bucket-name.s3-website-region.amazonaws.com/invalid.html
-
-Result:
-error.html page is displayed successfully.
-
-
-========================
-index.html
-==========
-
-<!DOCTYPE html>
-
-<html>
-<head>
-<title>My Static Website</title>
-
-```
-<style>
-body{
-background-color:#f2f2f2;
-font-family:Arial;
-text-align:center;
-padding-top:100px;
+__________________________________________________________________________________________________________
+EXP-1: Recording in Context Sensitive Mode and Analog Mode (Selenium IDE)
+__________________________________________________________________________________________________________
+
+TOOLS / REQUIREMENTS:
+- Selenium IDE extension (Chrome/Edge)
+- Any demo site for drag-and-drop (optional)
+
+PROCEDURE:
+1. Open Chrome/Edge and install the Selenium IDE extension from the browser extensions store.
+2. Click the Extensions icon and open Selenium IDE.
+3. Click 'Create a new project' and enter a project name.
+4. Click 'Add new test' and name the test case TC_Record_Google.
+5. Click the red 'Record' button.
+6. Enter the base URL: https://www.google.com and click 'Start Recording'.
+7. Perform actions: click the search box, type a keyword, press Enter, click a result, then go back.
+8. Stop recording and review the generated commands.
+9. Run the test using the 'Run current test' button.
+10. For analog-style actions, try recording a drag-and-drop or slider movement on a demo site and replay it.
+11. Save the project in Selenium IDE.
+
+NOTES:
+- Selenium IDE is mainly context-sensitive (element based).
+- True analog recording is limited.
+- For complex gestures use Selenium WebDriver code with the Actions class.
+
+OUTPUT:
+Running 'TC_Record_Google'
+open | https://www.google.com |
+type | name=q | selenium
+assertTitle | Google |
+Test completed successfully
+Result: PASS
+
+
+HOW TO RUN:
+1. Install Selenium IDE in Chrome/Edge.
+2. Open Selenium IDE.
+3. Create/open the project.
+4. Select TC_Record_Google.
+5. Click Run Current Test.
+
+
+__________________________________________________________________________________________________________
+EXP-2: GUI Checkpoint for Single Property
+__________________________________________________________________________________________________________
+
+OBJECTIVE:
+To verify a single GUI property of a Java Swing application.
+
+CODE:
+
+import javax.swing.JFrame;
+
+public class Exp2_SinglePropertyCheckpoint {
+    public static void main(String[] args) throws InterruptedException {
+
+        JFrame frame = new JFrame("Google");
+
+        frame.setSize(400, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+
+        String expectedTitle = "Google";
+        String actualTitle = frame.getTitle();
+
+        System.out.println("Actual Title : " + actualTitle);
+        System.out.println("Expected Title : " + expectedTitle);
+
+        if (actualTitle.equals(expectedTitle)) {
+            System.out.println("PASS: Title is correct");
+        } else {
+            System.out.println("FAIL: Title is incorrect");
+        }
+
+        Thread.sleep(2000);
+        frame.dispose();
+    }
 }
 
-h1{
-color:#2c3e50;
-font-size:45px;
+HOW TO RUN:
+
+javac Exp2_SinglePropertyCheckpoint.java
+java Exp2_SinglePropertyCheckpoint
+
+OUTPUT:
+
+Actual Title : Google
+Expected Title : Google
+PASS: Title is correct
+
+
+__________________________________________________________________________________________________________
+EXP-3: GUI Checkpoint for Single Object
+__________________________________________________________________________________________________________
+
+OBJECTIVE:
+To verify whether a GUI object is displayed and enabled.
+
+CODE:
+
+import javax.swing.*;
+
+public class Exp3_SingleObjectCheckpoint {
+    public static void main(String[] args) throws InterruptedException {
+
+        JFrame frame = new JFrame("Single Object Checkpoint");
+
+        JTextField searchBox = new JTextField(20);
+
+        JPanel panel = new JPanel();
+        panel.add(new JLabel("Search:"));
+        panel.add(searchBox);
+
+        frame.add(panel);
+
+        frame.setSize(400, 150);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+
+        Thread.sleep(500);
+
+        boolean displayed = searchBox.isShowing();
+        boolean enabled = searchBox.isEnabled();
+
+        System.out.println("Displayed: " + displayed);
+        System.out.println("Enabled : " + enabled);
+
+        System.out.println(displayed && enabled
+                ? "PASS: Search box is ready"
+                : "FAIL: Search box is not ready");
+
+        Thread.sleep(2000);
+        frame.dispose();
+    }
 }
 
-p{
-color:#555;
-font-size:22px;
+HOW TO RUN:
+
+javac Exp3_SingleObjectCheckpoint.java
+java Exp3_SingleObjectCheckpoint
+
+OUTPUT:
+
+Displayed: true
+Enabled : true
+PASS: Search box is ready
+
+
+__________________________________________________________________________________________________________
+EXP-4(a): Bitmap Checkpoint for a Single Object
+__________________________________________________________________________________________________________
+
+OBJECTIVE:
+To capture a GUI object and compare it with a baseline image.
+
+CODE:
+
+import javax.swing.*;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
+public class NewTest {
+    public static void main(String[] args) throws Exception {
+
+        JFrame frame = new JFrame("Bitmap Checkpoint Test");
+        JTextField searchBox = new JTextField("Search here", 20);
+
+        JPanel panel = new JPanel();
+        panel.add(searchBox);
+        frame.add(panel);
+
+        frame.setSize(350, 120);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+
+        Thread.sleep(1000);
+
+        File folder = new File("Screenshots");
+        if (!folder.exists()) folder.mkdir();
+
+        BufferedImage currentImage = new BufferedImage(
+                searchBox.getWidth(),
+                searchBox.getHeight(),
+                BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D g2 = currentImage.createGraphics();
+        searchBox.paint(g2);
+        g2.dispose();
+
+        File currentFile = new File("Screenshots/current_searchbox.png");
+        ImageIO.write(currentImage, "png", currentFile);
+
+        System.out.println("Current screenshot saved:");
+        System.out.println(currentFile.getAbsolutePath());
+
+        File baselineFile = new File("Screenshots/baseline_searchbox.png");
+
+        if (!baselineFile.exists()) {
+            System.out.println("Baseline image not found.");
+            System.out.println("Rename current_searchbox.png as baseline_searchbox.png");
+        } else {
+            boolean result = compareImages(baselineFile, currentFile);
+
+            if (result) {
+                System.out.println("BITMAP CHECKPOINT : TEST PASS");
+                System.out.println("Images are identical.");
+            } else {
+                System.out.println("BITMAP CHECKPOINT : TEST FAIL");
+                System.out.println("Images are different.");
+            }
+        }
+
+        Thread.sleep(2000);
+        frame.dispose();
+    }
+
+    public static boolean compareImages(File img1, File img2) throws Exception {
+        BufferedImage image1 = ImageIO.read(img1);
+        BufferedImage image2 = ImageIO.read(img2);
+
+        if (image1.getWidth() != image2.getWidth() ||
+            image1.getHeight() != image2.getHeight()) {
+            return false;
+        }
+
+        for (int x = 0; x < image1.getWidth(); x++) {
+            for (int y = 0; y < image1.getHeight(); y++) {
+                if (image1.getRGB(x, y) != image2.getRGB(x, y)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 }
 
-.box{
-background:white;
-width:60%;
-margin:auto;
-padding:40px;
-border-radius:10px;
-box-shadow:0px 0px 10px gray;
+HOW TO RUN:
+
+javac NewTest.java
+java NewTest
+
+FIRST RUN:
+Rename:
+Screenshots/current_searchbox.png
+to:
+Screenshots/baseline_searchbox.png
+
+Then run the program again.
+
+OUTPUT:
+
+Current screenshot saved:
+.../Screenshots/current_searchbox.png
+BITMAP CHECKPOINT : TEST PASS
+Images are identical.
+
+
+__________________________________________________________________________________________________________
+EXP-4(b): Bitmap Checkpoint for a Screen Area
+__________________________________________________________________________________________________________
+
+OBJECTIVE:
+To compare a screen area against a baseline image.
+
+CODE:
+
+import javax.swing.*;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
+public class NewTest {
+    public static void main(String[] args) throws Exception {
+
+        JFrame frame = new JFrame("Bitmap Area Checkpoint");
+        JPanel panel = new JPanel(new FlowLayout());
+
+        panel.add(new JLabel("Google Search"));
+        panel.add(new JTextField(25));
+        panel.add(new JButton("Search"));
+
+        frame.add(panel);
+        frame.setSize(800, 600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+
+        Thread.sleep(1000);
+
+        BufferedImage fullImage = new BufferedImage(
+                frame.getWidth(),
+                frame.getHeight(),
+                BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D g2 = fullImage.createGraphics();
+        frame.paint(g2);
+        g2.dispose();
+
+        File folder = new File("SeleniumScreenshots");
+        if (!folder.exists()) folder.mkdirs();
+
+        int width = Math.min(800, fullImage.getWidth());
+        int height = Math.min(600, fullImage.getHeight());
+
+        BufferedImage currentArea =
+                fullImage.getSubimage(0, 0, width, height);
+
+        File currentFile =
+                new File("SeleniumScreenshots/current_google_area.png");
+
+        ImageIO.write(currentArea, "png", currentFile);
+
+        System.out.println("Current screenshot saved:");
+        System.out.println(currentFile.getAbsolutePath());
+
+        File baselineFile =
+                new File("SeleniumScreenshots/baseline_google_area.png");
+
+        if (!baselineFile.exists()) {
+            System.out.println("Baseline image not found.");
+            System.out.println(
+                    "Rename current_google_area.png to baseline_google_area.png");
+        } else {
+            BufferedImage baseline = ImageIO.read(baselineFile);
+            double similarity = compareImages(baseline, currentArea);
+
+            System.out.printf(
+                    "Image Similarity : %.2f%%%n", similarity);
+
+            if (similarity >= 95)
+                System.out.println("BITMAP CHECKPOINT : TEST PASS");
+            else
+                System.out.println("BITMAP CHECKPOINT : TEST FAIL");
+        }
+
+        Thread.sleep(2000);
+        frame.dispose();
+    }
+
+    public static double compareImages(
+            BufferedImage img1,
+            BufferedImage img2) {
+
+        if (img1.getWidth() != img2.getWidth() ||
+            img1.getHeight() != img2.getHeight()) {
+            return 0;
+        }
+
+        long totalPixels =
+                (long) img1.getWidth() * img1.getHeight();
+
+        long samePixels = 0;
+
+        for (int x = 0; x < img1.getWidth(); x++) {
+            for (int y = 0; y < img1.getHeight(); y++) {
+                if (img1.getRGB(x, y) == img2.getRGB(x, y))
+                    samePixels++;
+            }
+        }
+
+        return ((double) samePixels / totalPixels) * 100;
+    }
 }
-</style>
-```
 
-</head>
+HOW TO RUN:
 
-<body>
+javac NewTest.java
+java NewTest
 
-```
-<div class="box">
-<h1>Welcome to My AWS S3 Website</h1>
+FIRST RUN:
+Rename current_google_area.png to baseline_google_area.png.
 
-<p>
-Static Website Hosting using Amazon S3
-</p>
+PASS CONDITION:
+Similarity >= 95%
 
-<p>
-Cloud Computing Lab Experiment
-</p>
-</div>
-```
+OUTPUT:
 
-</body>
-</html>
+Current screenshot saved:
+.../SeleniumScreenshots/current_google_area.png
+Image Similarity : 100.00%
+BITMAP CHECKPOINT : TEST PASS
 
-========================
-error.html
-==========
 
-<!DOCTYPE html>
+__________________________________________________________________________________________________________
+EXP-5: Database Checkpoint - Default Check (Record Exists)
+__________________________________________________________________________________________________________
 
-<html>
-<head>
-<title>Error Page</title>
+OBJECTIVE:
+To verify whether a database record exists.
 
-```
-<style>
-body{
-background-color:#ffe6e6;
-font-family:Arial;
-text-align:center;
-padding-top:120px;
+CODE:
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+public class NewTest {
+    public static void main(String[] args) {
+        try {
+            Connection con = DriverManager.getConnection(
+                    "jdbc:h2:./StudentDB", "sa", "");
+
+            Statement stmt = con.createStatement();
+
+            stmt.execute(
+                    "CREATE TABLE IF NOT EXISTS STUDENT (" +
+                    "ID INT PRIMARY KEY, " +
+                    "NAME VARCHAR(50), " +
+                    "EMAIL VARCHAR(100))");
+
+            stmt.execute("DELETE FROM STUDENT");
+
+            stmt.executeUpdate(
+                    "INSERT INTO STUDENT VALUES " +
+                    "(1, 'Ajay', 'ajay@gmail.com')");
+
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT * FROM STUDENT WHERE ID = 1");
+
+            if (rs.next()) {
+                System.out.println("Record Exists");
+                System.out.println("ID : " + rs.getInt("ID"));
+                System.out.println("Name : " + rs.getString("NAME"));
+                System.out.println("Email : " + rs.getString("EMAIL"));
+                System.out.println("TEST PASSED");
+            } else {
+                System.out.println("Record Not Found");
+                System.out.println("TEST FAILED");
+            }
+
+            rs.close();
+            stmt.close();
+            con.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
 
-h1{
-color:red;
-font-size:50px;
+HOW TO RUN:
+
+Keep h2-2.4.240.jar in the same folder.
+
+javac -cp h2-2.4.240.jar NewTest.java
+
+java -cp ".;h2-2.4.240.jar" NewTest
+
+OUTPUT:
+
+Record Exists
+ID : 1
+Name : Ajay
+Email : ajay@gmail.com
+TEST PASSED
+
+
+__________________________________________________________________________________________________________
+EXP-6: Database Checkpoint for Custom Check
+__________________________________________________________________________________________________________
+
+OBJECTIVE:
+To perform a custom database checkpoint based on student marks.
+
+CODE:
+
+import java.sql.*;
+
+public class DatabaseCheckpointCustomCheck {
+
+    static final String DB_URL = "jdbc:sqlite:student.db";
+
+    public static void setupDatabase() throws SQLException {
+        try (Connection conn =
+                     DriverManager.getConnection(DB_URL);
+             Statement stmt = conn.createStatement()) {
+
+            stmt.execute(
+                    "CREATE TABLE IF NOT EXISTS students (" +
+                    "id INTEGER PRIMARY KEY, " +
+                    "name TEXT, " +
+                    "marks INTEGER)");
+
+            stmt.execute("DELETE FROM students");
+
+            stmt.execute(
+                    "INSERT INTO students VALUES (1, 'Amit', 78)");
+
+            stmt.execute(
+                    "INSERT INTO students VALUES (2, 'Neha', 45)");
+
+            stmt.execute(
+                    "INSERT INTO students VALUES (3, 'Ravi', 92)");
+        }
+    }
+
+    public static boolean customCheckpoint(
+            int studentId,
+            String expectedStatus) throws SQLException {
+
+        try (Connection conn =
+                     DriverManager.getConnection(DB_URL);
+             PreparedStatement ps =
+                     conn.prepareStatement(
+                             "SELECT marks FROM students WHERE id = ?")) {
+
+            ps.setInt(1, studentId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                System.out.println(
+                        "FAIL: No record found for id " + studentId);
+                return false;
+            }
+
+            int marks = rs.getInt("marks");
+
+            String actualStatus =
+                    (marks >= 50) ? "Pass" : "Fail";
+
+            if (actualStatus.equals(expectedStatus)) {
+                System.out.println(
+                        "PASS: Student " + studentId +
+                        " status = " + actualStatus +
+                        " (Custom check matched)");
+                return true;
+            } else {
+                System.out.println(
+                        "FAIL: Student " + studentId +
+                        " expected " + expectedStatus +
+                        ", got " + actualStatus);
+                return false;
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        setupDatabase();
+
+        customCheckpoint(1, "Pass");
+        customCheckpoint(2, "Fail");
+        customCheckpoint(3, "Pass");
+    }
 }
 
-p{
-font-size:22px;
-color:#333;
+HOW TO RUN:
+
+Keep sqlite-jdbc-3.34.0.jar in the same folder.
+
+javac -cp sqlite-jdbc-3.34.0.jar DatabaseCheckpointCustomCheck.java
+
+java -cp ".;sqlite-jdbc-3.34.0.jar" DatabaseCheckpointCustomCheck
+
+OUTPUT:
+
+PASS: Student 1 status = Pass (Custom check matched)
+PASS: Student 2 status = Fail (Custom check matched)
+PASS: Student 3 status = Pass (Custom check matched)
+
+
+__________________________________________________________________________________________________________
+EXP-7(a): Dynamic Test Data Submission
+__________________________________________________________________________________________________________
+
+CODE:
+
+import java.util.Random;
+
+public class DynamicDataTest {
+
+    public static double calculateDiscount(
+            double price, String category) {
+
+        switch (category) {
+            case "electronics":
+                return price * 0.9;
+            case "clothing":
+                return price * 0.8;
+            default:
+                return price;
+        }
+    }
+
+    public static void main(String[] args) {
+
+        String[] categories =
+                {"electronics", "clothing", "grocery"};
+
+        Random rand = new Random();
+
+        System.out.println(
+                "---- Dynamic Test Data Submission ----");
+
+        for (int i = 1; i <= 5; i++) {
+
+            int price = 100 + rand.nextInt(901);
+
+            String category =
+                    categories[rand.nextInt(categories.length)];
+
+            double result =
+                    calculateDiscount(price, category);
+
+            System.out.printf(
+                    "Test %d: price=%d, category=%s -> discounted=%.2f%n",
+                    i, price, category, result);
+        }
+    }
 }
 
-a{
-text-decoration:none;
-color:blue;
-font-size:20px;
+HOW TO RUN:
+
+javac DynamicDataTest.java
+java DynamicDataTest
+
+
+__________________________________________________________________________________________________________
+EXP-7(b): Data Driven Test Through Flat Files
+__________________________________________________________________________________________________________
+
+CODE:
+
+import java.io.*;
+
+public class FlatFileTest {
+
+    public static double calculateDiscount(
+            double price, String category) {
+
+        switch (category) {
+            case "electronics":
+                return price * 0.9;
+            case "clothing":
+                return price * 0.8;
+            default:
+                return price;
+        }
+    }
+
+    public static void createFlatFile() throws IOException {
+
+        try (PrintWriter pw =
+                     new PrintWriter(new FileWriter("testdata.txt"))) {
+
+            pw.println("500,electronics");
+            pw.println("300,clothing");
+            pw.println("150,grocery");
+        }
+    }
+
+    public static void flatFileTest() throws IOException {
+
+        System.out.println(
+                "---- Data Driven Test via Flat File ----");
+
+        try (BufferedReader br =
+                     new BufferedReader(
+                             new FileReader("testdata.txt"))) {
+
+            String line;
+
+            while ((line = br.readLine()) != null) {
+
+                String[] parts = line.split(",");
+
+                double price =
+                        Double.parseDouble(parts[0]);
+
+                String category = parts[1];
+
+                double result =
+                        calculateDiscount(price, category);
+
+                System.out.printf(
+                        "price=%.1f, category=%s -> discounted=%.2f%n",
+                        price, category, result);
+            }
+        }
+    }
+
+    public static void main(String[] args)
+            throws IOException {
+
+        createFlatFile();
+        flatFileTest();
+    }
 }
-</style>
-```
 
-</head>
+HOW TO RUN:
 
-<body>
+javac FlatFileTest.java
+java FlatFileTest
 
-```
-<h1>404 Error</h1>
+OUTPUT:
 
-<p>
-Oops! The page you are looking for does not exist.
-</p>
-
-<a href="index.html">
-Back to Home
-</a>
-```
-
-</body>
-</html>
+---- Data Driven Test via Flat File ----
+price=500.0, category=electronics -> discounted=450.00
+price=300.0, category=clothing -> discounted=240.00
+price=150.0, category=grocery -> discounted=150.00
 
 
-===========================================================
-=============================================================
-AWS BASTION HOST + PRIVATE DATABASE SETUP (COMPLETE GUIDE)
+__________________________________________________________________________________________________________
+EXP-7(c): Data Driven Test Through Front-End Grids
+__________________________________________________________________________________________________________
 
-========================================================
-========================================================
+CODE:
 
-VPC CONFIGURATION
-========================================================
-VPC:
-Name: myvpc
-CIDR: 10.0.0.0/16
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
-Subnets:
-Public Subnet (Bastion):
+public class FrontEndGridTest {
 
-Name: PublicSubnet
-CIDR: 10.0.1.0/24
-Private Subnet (DB):
+    public static double calculateDiscount(
+            double price, String category) {
 
-Name: PrivateSubnet
-CIDR: 10.0.2.0/24
-========================================================
-2. INTERNET GATEWAY
-Create Internet Gateway
-Attach to myvpc
-========================================================
-3. ROUTE TABLES
-Public Route Table:
+        switch (category) {
+            case "electronics":
+                return price * 0.9;
+            case "clothing":
+                return price * 0.8;
+            default:
+                return price;
+        }
+    }
 
-Destination: 0.0.0.0/0 → Internet Gateway
-Associate: PublicSubnet
-Private Route Table:
+    public static void main(String[] args) {
 
-Destination: 10.0.0.0/16 → local
-Associate: PrivateSubnet
-========================================================
-4. SECURITY GROUPS
+        JFrame frame =
+                new JFrame("Front End Grid - Data Driven Test");
 
-A) BASTION SECURITY GROUP
-Inbound Rules:
+        String[] columns =
+                {"Price", "Category", "Result"};
 
-SSH | Port 22 | Source: My IP
-Outbound Rules:
+        DefaultTableModel model =
+                new DefaultTableModel(columns, 0);
 
-All traffic | 0.0.0.0/0
+        Object[][] gridData = {
+                {500.0, "electronics"},
+                {300.0, "clothing"},
+                {150.0, "grocery"}
+        };
 
-B) DATABASE SECURITY GROUP
-Inbound Rules:
+        for (Object[] row : gridData) {
 
-SSH | Port 22 | Source: 10.0.1.0/24 (Bastion subnet)
-MYSQL/Aurora | Port 3306 | Source: 10.0.2.0/24
-Outbound Rules:
+            double price = (double) row[0];
+            String category = (String) row[1];
 
-All traffic | 0.0.0.0/0
-========================================================
-5. EC2 INSTANCE CONFIGURATION
+            double result =
+                    calculateDiscount(price, category);
 
-BASTION INSTANCE
-Subnet: PublicSubnet
-Auto-assign Public IP: Enabled
-Security Group: Bastion SG
-Key Pair: bastion.pem
+            model.addRow(new Object[]{
+                    price,
+                    category,
+                    String.format("%.2f", result)
+            });
+        }
 
-DATABASE INSTANCE
-Subnet: PrivateSubnet
-Auto-assign Public IP: Disabled
-Security Group: DB SG
-Key Pair: ebs_test_key.pem
-========================================================
-6. CONNECTIVITY FLOW
-Windows PC
-↓ SSH
-Bastion Host (Public Subnet)
-↓ SSH (Private IP)
-Database Server (Private Subnet)
+        JTable table = new JTable(model);
 
-========================================================
-7. CONNECTION COMMANDS
+        frame.add(new JScrollPane(table));
+        frame.setSize(400, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+}
 
-Step 1: Connect to Bastion
-ssh -i bastion.pem ubuntu@<BASTION_PUBLIC_IP>
+HOW TO RUN:
+
+javac FrontEndGridTest.java
+java FrontEndGridTest
+
+OUTPUT:
+
+Price    Category       Result
+500.0    electronics    450.00
+300.0    clothing       240.00
+150.0    grocery        150.00
 
 
-Step 2: Copy DB Key to Bastion
-scp -i bastion.pem ebs_test_key.pem ubuntu@<BASTION_PUBLIC_IP>:/home/ubuntu/
+__________________________________________________________________________________________________________
+EXP-7(d): Data Driven Test Through Excel
+__________________________________________________________________________________________________________
+
+CODE:
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.*;
+
+public class ExcelDrivenTest {
+
+    public static double calculateDiscount(
+            double price, String category) {
+
+        switch (category) {
+            case "electronics":
+                return price * 0.9;
+            case "clothing":
+                return price * 0.8;
+            default:
+                return price;
+        }
+    }
+
+    public static void createExcelFile()
+            throws IOException {
+
+        Workbook wb = new XSSFWorkbook();
+        Sheet sheet = wb.createSheet("TestData");
+
+        Object[][] data = {
+                {"Price", "Category"},
+                {500.0, "electronics"},
+                {300.0, "clothing"},
+                {150.0, "grocery"}
+        };
+
+        for (int r = 0; r < data.length; r++) {
+
+            Row row = sheet.createRow(r);
+
+            for (int c = 0; c < data[r].length; c++) {
+
+                Cell cell = row.createCell(c);
+
+                if (data[r][c] instanceof Double)
+                    cell.setCellValue((Double) data[r][c]);
+                else
+                    cell.setCellValue((String) data[r][c]);
+            }
+        }
+
+        try (FileOutputStream fos =
+                     new FileOutputStream("testdata.xlsx")) {
+
+            wb.write(fos);
+        }
+
+        wb.close();
+    }
+
+    public static void excelDrivenTest()
+            throws IOException {
+
+        System.out.println(
+                "---- Data Driven Test via Excel ----");
+
+        try (FileInputStream fis =
+                     new FileInputStream("testdata.xlsx");
+             Workbook wb = new XSSFWorkbook(fis)) {
+
+            Sheet sheet = wb.getSheetAt(0);
+
+            for (Row row : sheet) {
+
+                if (row.getRowNum() == 0)
+                    continue;
+
+                double price =
+                        row.getCell(0).getNumericCellValue();
+
+                String category =
+                        row.getCell(1).getStringCellValue();
+
+                double result =
+                        calculateDiscount(price, category);
+
+                System.out.printf(
+                        "price=%.1f, category=%s -> discounted=%.2f%n",
+                        price, category, result);
+            }
+        }
+    }
+
+    public static void main(String[] args)
+            throws IOException {
+
+        createExcelFile();
+        excelDrivenTest();
+    }
+}
+
+HOW TO RUN:
+
+Keep the Apache POI JAR files in the same folder.
+
+javac -cp ".;poi-5.2.5.jar;poi-ooxml-5.2.5.jar;poi-ooxml-lite-5.2.5.jar;xmlbeans-5.2.0.jar;commonscollections4-4.4.jar;commons-compress-1.26.0.jar;commons-io-2.15.1.jar;log4j-api-2.20.0.jar" ExcelDrivenTest.java
+
+java -cp ".;poi-5.2.5.jar;poi-ooxml-5.2.5.jar;poi-ooxml-lite-5.2.5.jar;xmlbeans-5.2.0.jar;commonscollections4-4.4.jar;commons-compress-1.26.0.jar;commons-io-2.15.1.jar;log4j-api-2.20.0.jar" ExcelDrivenTest
+
+OUTPUT:
+
+---- Data Driven Test via Excel ----
+price=500.0, category=electronics -> discounted=450.00
+price=300.0, category=clothing -> discounted=240.00
+price=150.0, category=grocery -> discounted=150.00
 
 
-Step 3: Fix Permissions in Bastion
-chmod 400 ebs_test_key.pem
+__________________________________________________________________________________________________________
+EXP-7(e): Batch Testing Without Parameter Passing
+__________________________________________________________________________________________________________
+
+CODE:
+
+public class BatchNoParams {
+
+    public static void testAddition() {
+        assert 2 + 3 == 5;
+        System.out.println("test_addition: PASS");
+    }
+
+    public static void testSubtraction() {
+        assert 5 - 2 == 3;
+        System.out.println("test_subtraction: PASS");
+    }
+
+    public static void main(String[] args) {
+
+        System.out.println(
+                "---- Batch Testing (No Parameters) ----");
+
+        testAddition();
+        testSubtraction();
+    }
+}
+
+HOW TO RUN:
+
+javac BatchNoParams.java
+java -ea BatchNoParams
+
+OUTPUT:
+
+---- Batch Testing (No Parameters) ----
+test_addition: PASS
+test_subtraction: PASS
 
 
-Step 4: Connect to DB Server
-ssh -i ebs_test_key.pem ec2-user@10.0.2.26
+__________________________________________________________________________________________________________
+EXP-7(f): Batch Testing With Parameter Passing
+__________________________________________________________________________________________________________
 
-========================================================
-8. DATABASE ADMINISTRATION TASKS
+CODE:
 
-Install MySQL
-sudo yum update -y
-sudo yum install mysql-server -y
+public class BatchWithParams {
 
-(or Ubuntu)
-sudo apt update
-sudo apt install mysql-server -y
+    static void testOperation(
+            int a, int b, char op, int expected) {
+
+        int result = 0;
+
+        switch (op) {
+            case '+':
+                result = a + b;
+                break;
+            case '-':
+                result = a - b;
+                break;
+            case '*':
+                result = a * b;
+                break;
+        }
+
+        String status =
+                (result == expected) ? "PASS" : "FAIL";
+
+        System.out.printf(
+                "Test: %d %c %d = %d (expected %d) -> %s%n",
+                a, op, b, result, expected, status);
+    }
+
+    public static void main(String[] args) {
+
+        int[][] testCases = {
+                {2, 3, '+', 5},
+                {10, 4, '-', 6},
+                {3, 3, '*', 9},
+                {5, 5, '-', 1}
+        };
+
+        System.out.println(
+                "---- Batch Testing (With Parameters) ----");
+
+        for (int[] tc : testCases) {
+            testOperation(
+                    tc[0],
+                    tc[1],
+                    (char) tc[2],
+                    tc[3]);
+        }
+    }
+}
+
+HOW TO RUN:
+
+javac BatchWithParams.java
+java BatchWithParams
+
+OUTPUT:
+
+---- Batch Testing (With Parameters) ----
+Test: 2 + 3 = 5 (expected 5) -> PASS
+Test: 10 - 4 = 6 (expected 6) -> PASS
+Test: 3 * 3 = 9 (expected 9) -> PASS
+Test: 5 - 5 = 0 (expected 1) -> FAIL
 
 
-Start MySQL Service
-sudo systemctl start mysqld
+__________________________________________________________________________________________________________
+EXP-8: Data Driven Batch
+__________________________________________________________________________________________________________
+
+CODE:
+
+import java.io.*;
+
+public class DataDrivenBatch {
+
+    public static double calculateDiscount(
+            double price, String category) {
+
+        switch (category) {
+            case "electronics":
+                return price * 0.9;
+            case "clothing":
+                return price * 0.8;
+            default:
+                return price;
+        }
+    }
+
+    public static void createCsvFile()
+            throws IOException {
+
+        try (PrintWriter pw =
+                     new PrintWriter(
+                             new FileWriter("batch_data.csv"))) {
+
+            pw.println("Price,Category,ExpectedResult");
+            pw.println("500,electronics,450");
+            pw.println("300,clothing,240");
+            pw.println("150,grocery,150");
+            pw.println("1000,electronics,900");
+        }
+    }
+
+    public static void dataDrivenBatch()
+            throws IOException {
+
+        System.out.println(
+                "---- Data Driven Batch Test ----");
+
+        int passCount = 0;
+        int failCount = 0;
+
+        try (BufferedReader br =
+                     new BufferedReader(
+                             new FileReader("batch_data.csv"))) {
+
+            String line = br.readLine();
+
+            while ((line = br.readLine()) != null) {
+
+                String[] parts = line.split(",");
+
+                double price =
+                        Double.parseDouble(parts[0]);
+
+                String category = parts[1];
+
+                double expected =
+                        Double.parseDouble(parts[2]);
+
+                double actual =
+                        calculateDiscount(price, category);
+
+                if (actual == expected) {
+
+                    System.out.printf(
+                            "PASS: %s, price=%.1f -> %.1f%n",
+                            category, price, actual);
+
+                    passCount++;
+
+                } else {
+
+                    System.out.printf(
+                            "FAIL: %s, price=%.1f -> got %.1f, expected %.1f%n",
+                            category, price, actual, expected);
+
+                    failCount++;
+                }
+            }
+        }
+
+        System.out.println(
+                "\nBatch Summary: " +
+                passCount + " Passed, " +
+                failCount + " Failed");
+    }
+
+    public static void main(String[] args)
+            throws IOException {
+
+        createCsvFile();
+        dataDrivenBatch();
+    }
+}
+
+HOW TO RUN:
+
+javac DataDrivenBatch.java
+java DataDrivenBatch
+
+OUTPUT:
+
+---- Data Driven Batch Test ----
+PASS: electronics, price=500.0 -> 450.0
+PASS: clothing, price=300.0 -> 240.0
+PASS: grocery, price=150.0 -> 150.0
+PASS: electronics, price=1000.0 -> 900.0
+Batch Summary: 4 Passed, 0 Failed
 
 
-Check Status
-sudo systemctl status mysqld
+__________________________________________________________________________________________________________
+EXP-9: Silent Mode Test Execution Without Interruption
+__________________________________________________________________________________________________________
+
+CODE:
+
+import java.util.logging.*;
+import java.io.IOException;
+
+public class SilentModeTest {
+
+    static Logger logger =
+            Logger.getLogger("SilentTestLogger");
+
+    static void setupLogger() throws IOException {
+
+        logger.setUseParentHandlers(false);
+
+        FileHandler fh =
+                new FileHandler("silent_test_log.txt");
+
+        fh.setFormatter(new SimpleFormatter());
+
+        logger.addHandler(fh);
+    }
+
+    static void testCase(
+            String name,
+            Object actual,
+            Object expected) {
+
+        try {
+
+            if (actual.equals(expected)) {
+
+                logger.info(
+                        name + ": PASS (actual=" +
+                        actual + ", expected=" +
+                        expected + ")");
+
+            } else {
+
+                logger.severe(
+                        name + ": FAIL (actual=" +
+                        actual + ", expected=" +
+                        expected + ")");
+            }
+
+        } catch (Exception e) {
+
+            logger.severe(
+                    name + ": ERROR - " +
+                    e.getMessage());
+        }
+    }
+
+    public static void main(String[] args)
+            throws IOException {
+
+        setupLogger();
+
+        testCase("Addition Test", 2 + 2, 4);
+        testCase("Subtraction Test", 10 - 5, 5);
+        testCase("Multiplication Test", 3 * 3, 10);
+        testCase("String Test", "abc".toUpperCase(), "ABC");
+
+        System.out.println(
+                "Batch execution completed silently. " +
+                "Check silent_test_log.txt for results.");
+    }
+}
+
+HOW TO RUN:
+
+javac SilentModeTest.java
+java SilentModeTest
+
+Then view the log:
+
+Windows CMD:
+type silent_test_log.txt
+
+PowerShell:
+Get-Content silent_test_log.txt
+
+OUTPUT:
+
+Batch execution completed silently. Check silent_test_log.txt for results.
+
+LOG:
+
+INFO: Addition Test: PASS (actual=4, expected=4)
+INFO: Subtraction Test: PASS (actual=5, expected=5)
+SEVERE: Multiplication Test: FAIL (actual=9, expected=10)
+INFO: String Test: PASS (actual=ABC, expected=ABC)
 
 
-Enable at Boot
-sudo systemctl enable mysqld
+__________________________________________________________________________________________________________
+EXP-10: Test Case for Calculator in Windows Application
+__________________________________________________________________________________________________________
 
+OBJECTIVE:
+To test a calculator operation using Java Robot.
 
-Restart MySQL
-sudo systemctl restart mysqld
+CODE:
 
-========================================================
-========================================================
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 
+public class CalculatorTest {
 
-========================================================
-AWS NORMAL VPC SETUP (BASIC EC2 DEPLOYMENT)
+    public static void main(String[] args) throws Exception {
 
-========================================================
+        Runtime.getRuntime().exec("calc.exe");
 
-VPC CREATION
-========================================================
-VPC:
-Name: NormalVPC
-CIDR Block: 10.0.0.0/16
-This VPC is used for a simple public EC2 setup (no Bastion, no private subnet).
+        Thread.sleep(2000);
 
-========================================================
-2. SUBNET CREATION
-Public Subnet:
+        Robot robot = new Robot();
 
-Name: PublicSubnet
-CIDR: 10.0.1.0/24
-Availability Zone: any (same region)
-========================================================
-3. INTERNET GATEWAY
-Create Internet Gateway
-Attach to NormalVPC
-========================================================
-4. ROUTE TABLE
-Public Route Table:
+        robot.setAutoDelay(200);
 
-Destination: 0.0.0.0/0 → Internet Gateway
-Associate with PublicSubnet
-========================================================
-5. SECURITY GROUP
-Security Group Name: WebSG
+        typeKey(robot, KeyEvent.VK_7);
+        typeKey(robot, KeyEvent.VK_ADD);
+        typeKey(robot, KeyEvent.VK_5);
+        typeKey(robot, KeyEvent.VK_EQUALS);
 
-Inbound Rules:
+        Thread.sleep(1000);
 
-SSH | Port 22 | Source: My IP
-HTTP | Port 80 | Source: 0.0.0.0/0 (optional for web server)
-HTTPS | Port 443 | Source: 0.0.0.0/0 (optional)
-Outbound Rules:
+        Rectangle screenRect =
+                new Rectangle(
+                        Toolkit.getDefaultToolkit()
+                                .getScreenSize());
 
-All traffic | 0.0.0.0/0
-========================================================
-6. EC2 INSTANCE SETUP
-Instance:
+        BufferedImage capture =
+                robot.createScreenCapture(screenRect);
 
-Name: Public-EC2
-AMI: Amazon Linux 2023
-Instance Type: t3.micro
-Key Pair: normal-key.pem (or any created key)
-Network Settings:
+        ImageIO.write(
+                capture,
+                "png",
+                new File("calculator_result.png"));
 
-VPC: NormalVPC
-Subnet: PublicSubnet
-Auto-assign Public IP: Enabled
-Security Group: WebSG
-========================================================
-7. CONNECT TO INSTANCE
-From Windows:
+        System.out.println(
+                "Test executed: 7 + 5 =");
 
-ssh -i "normal-key.pem" ec2-user@<PUBLIC_IP>
+        System.out.println(
+                "Screenshot saved as calculator_result.png -- " +
+                "compare visually to confirm result is 12");
+    }
 
-========================================================
-8. OPTIONAL WEB SERVER SETUP
-Install Apache:
+    static void typeKey(
+            Robot robot,
+            int keyCode) {
 
-sudo yum update -y
-sudo yum install httpd -y
-sudo systemctl start httpd
-sudo systemctl enable httpd
+        robot.keyPress(keyCode);
+        robot.keyRelease(keyCode);
+    }
+}
 
-Test:
+HOW TO RUN:
 
-Open browser → http://<PUBLIC_IP>
-========================================================
-9. FINAL ARCHITECTURE
-Internet
-↓
-Internet Gateway
-↓
-Public Subnet (10.0.1.0/24)
-↓
-EC2 Instance (Public IP enabled)
+javac CalculatorTest.java
+java CalculatorTest
 
-========================================================
-END OF DOCUMENT
+OUTPUT:
+
+Test executed: 7 + 5 =12
+Screenshot saved as calculator_result.png -- compare visually to confirm result is 12
